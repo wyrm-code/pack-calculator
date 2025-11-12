@@ -8,8 +8,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/example/pack-calculator/internal/solver"
 )
 
 type calcRequest struct {
