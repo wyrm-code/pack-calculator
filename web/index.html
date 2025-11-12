@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Order Packs Calculator</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 2rem; }
+    h1 { margin-bottom: 0.5rem; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; max-width: 680px; }
+    label { display:block; font-weight:600; margin-top: 0.75rem; }
+    input { width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:8px; }
+    button { margin-top: 1rem; padding:0.6rem 1rem; border:none; border-radius:10px; background:#10b981; color:white; font-weight:700; cursor:pointer; }
+    table { width:100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border:1px solid #e5e7eb; padding:0.5rem; text-align:left; }
+    th { background:#f9fafb; }
+    .muted { color:#6b7280; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Order Packs Calculator</h1>
+  <p class="muted">Enter pack sizes (comma-separated) and the items ordered. The server minimizes total items first, then number of packs.</p>
+
+  <div class="card">
+    <label for="sizes">Pack Sizes</label>
+    <input id="sizes" value="250,500,1000,2000,5000" />
+    <label for="items">Items Ordered</label>
+    <input id="items" type="number" min="1" value="263" />
+    <button id="btn">Calculate</button>
+
+    <div id="result"></div>
+  </div>
+
+<script>
+const btn = document.getElementById('btn');
+const result = document.getElementById('result');
+
+btn.addEventListener('click', async () => {
+  result.innerHTML = '';
+  const sizes = document.getElementById('sizes').value.trim();
+  const items = parseInt(document.getElementById('items').value, 10);
+  if (!items || items <= 0) { alert('Items must be a positive integer'); return; }
+
+  const payload = { items, sizes: sizes ? sizes.split(',').map(s=>parseInt(s.trim(),10)).filter(n=>!isNaN(n)) : undefined };
+
+  const resp = await fetch('/api/calc', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    result.innerHTML = '<p style="color:#b91c1c">Error: ' + text + '</p>';
+    return;
+  }
+  const data = await resp.json();
+  let html = '<h3>Result</h3>';
+  html += `<p><b>Items ordered:</b> ${data.itemsOrdered} &nbsp;&nbsp; <b>Total items shipped:</b> ${data.totalItems}</p>`;
+  html += '<table><thead><tr><th>Pack Size</th><th>Quantity</th></tr></thead><tbody>';
+  data.packs.forEach(p => {
+    html += `<tr><td>${p.size}</td><td>${p.qty}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  result.innerHTML = html;
+});
+</script>
+</body>
+</html>
